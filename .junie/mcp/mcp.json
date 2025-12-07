@@ -1,0 +1,11 @@
+{
+    "mcpServers": {
+        "laravel-boost": {
+            "command": "/usr/bin/php",
+            "args": [
+                "/home/masshuu/Projects/aplikacje_internetowe_calendar/artisan",
+                "boost:mcp"
+            ]
+        }
+    }
+}
