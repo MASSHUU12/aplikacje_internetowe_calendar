@@ -1,0 +1,263 @@
+openapi: 3.0.3
+info:
+  title: Authentication API
+  description: API for user registration, login, and logout
+  version: 1.0.0
+
+servers:
+  - url: http://0.0.0.0:8000/api
+    description: Local API server
+
+paths:
+  /api/register:
+    post:
+      operationId: register
+      summary: User Registration
+      description: Register a new user account with email
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: User's email address
+                password:
+                  type: string
+                  format: password
+                  description: User's password
+                  minLength: 8
+                  maxLength: 255
+                password_confirmation:
+                  type: string
+                  format: password
+                  description: Password confirmation
+              required: [email, password, password_confirmation]
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+                  token:
+                    type: string
+                    description: Authentication token for subsequent requests
+                    example: '1|Xisr9laFEoIDeMY8Pc7TcdpoJNsoJg3h0nkRHRet14e31ce9'
+        '422':
+          $ref: '#/components/responses/Error422'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'There was an error during user registration. Please try again.'
+  /api/login:
+    post:
+      operationId: login
+      summary: User Login
+      description: Authenticate user with email/phone number and password
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: User's email address
+                password:
+                  type: string
+                  format: password
+                  description: User's password
+              required: [email, password]
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+                  token:
+                    type: string
+                    description: Authentication token for subsequent requests
+                    example: '2|LKasd82jd92jd02jdKJkajsd92jdK2j3d0s3dk'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+              examples:
+                incorrectCredentials:
+                  summary: Incorrect Credentials
+                  value:
+                    message: 'The provided credentials are incorrect.'
+                blockedAccount:
+                  summary: Account Blocked
+                  value:
+                    message: 'Your account is temporarily blocked. Please try again later.'
+  /api/logout:
+    post:
+      operationId: logout
+      summary: User Logout
+      description: Revoke all tokens for the authenticated user
+      tags:
+        - Authentication
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Tokens Revoked'
+        '401':
+          $ref: '#/components/schemas/Error401'
+  /api/user/password:
+    patch:
+      operationId: updatePassword
+      summary: Change Password
+      description: >
+        Update the authenticated user’s password. This operation also revokes all existing
+        authentication tokens for the user, requiring re-authentication. The request must include
+        the current password, new password, and new password confirmation.
+      tags:
+        - Authentication
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                current_password:
+                  type: string
+                  format: password
+                  description: The user’s existing password
+                password:
+                  type: string
+                  format: password
+                  description: The new password
+                  minLength: 8
+                  maxLength: 255
+                password_confirmation:
+                  type: string
+                  format: password
+                  description: Confirmation of the new password
+              required:
+                - current_password
+                - password
+                - password_confirmation
+      responses:
+        '200':
+          description: Password Updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Password updated successfully.'
+        '401':
+          $ref: '#/components/schemas/Error401'
+        '422':
+          $ref: '#/components/schemas/Error422'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        email:
+          type: string
+          format: email
+          nullable: true
+          example: 'example@example.com'
+        created_at:
+          type: string
+          format: date-time
+          example: '2025-03-10T11:43:23.000000Z'
+        updated_at:
+          type: string
+          format: date-time
+          example: '2025-03-10T11:43:23.000000Z'
+    Error401:
+      type: object
+      properties:
+        message:
+          type: string
+          example: 'Unauthenticated.'
+    Error422:
+      type: object
+      properties:
+        message:
+          type: string
+          example: 'The given data was invalid.'
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+  x-account-security:
+    description: |
+      The system implements the following account security features:
+      - Failed login attempts are tracked
+      - After 5 failed login attempts, the account will be temporarily blocked for 4 hours
+      - Failed login counter is reset after a successful login
+      - When an account is blocked, login attempts and any protected routes will be rejected until the block expires
+  x-validation-rules:
+    email:
+      description: |
+        - Required
+        - Must be unique in the system
+        - Must be a valid email format
+    password:
+      description: |
+        - Required
+        - Minimum length: 8 characters
+        - Maximum length: 255 characters
+        - Must contain at least one lowercase letter
+        - Must contain at least one uppercase letter
+        - Must contain at least one number
+        - Must contain at least one special character (@, $, !, %, *, ?, &)
+        - Must be confirmed with password_confirmation field

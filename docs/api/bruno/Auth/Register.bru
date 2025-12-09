@@ -1,0 +1,17 @@
+meta {
+  name: Register
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{full_api_address}}/register
+  body: formUrlEncoded
+  auth: none
+}
+
+body:form-urlencoded {
+  email: example@example.com
+  password: Zaq1@wsx
+  password_confirmation: Zaq1@wsx
+}
