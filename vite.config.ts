@@ -24,4 +24,16 @@ export default defineConfig({
     esbuild: {
         jsx: 'automatic',
     },
+    server: {
+        host: '0.0.0.0',
+        port: 5173,
+        strictPort: true,
+        cors: true,
+        hmr: {
+            host: 'localhost',
+        },
+        watch: {
+            usePolling: true, // required for use in container
+        },
+    },
 });
