@@ -1,0 +1,838 @@
+openapi: 3.0.3
+info:
+  title: Calendar API (Auth + Calendars + Events)
+  description: API for authentication and a minimal Google-like calendar (calendars + events).
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8000/api
+    description: Local API server
+
+tags:
+  - name: Authentication
+    description: Registration, login, logout, password change
+  - name: Calendars
+    description: User calendars (owned/shared)
+  - name: Events
+    description: Calendar events CRUD
+
+paths:
+  /register:
+    post:
+      operationId: register
+      summary: User Registration
+      description: Register a new user account with email
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error422'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: There was an error during user registration. Please try again.
+
+  /login:
+    post:
+      operationId: login
+      summary: User Login
+      description: Authenticate user with email and password
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+              examples:
+                incorrectCredentials:
+                  summary: Incorrect Credentials
+                  value:
+                    message: The provided credentials are incorrect.
+                blockedAccount:
+                  summary: Account Blocked
+                  value:
+                    message: Your account is temporarily blocked. Please try again later.
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error422'
+
+  /logout:
+    post:
+      operationId: logout
+      summary: User Logout
+      description: Revoke all tokens for the authenticated user
+      tags: [Authentication]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Tokens Revoked
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+
+  /user/password:
+    patch:
+      operationId: updatePassword
+      summary: Change Password
+      description: >
+        Update the authenticated user’s password. This operation should revoke existing tokens
+        (implementation detail). The request must include the current password, new password,
+        and new password confirmation.
+      tags: [Authentication]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePasswordRequest'
+      responses:
+        '200':
+          description: Password Updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Password updated successfully.
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error422'
+
+  /calendars:
+    get:
+      tags: [Calendars]
+      operationId: listCalendars
+      security:
+        - bearerAuth: []
+      summary: List calendars
+      description: Returns calendars owned by the user and calendars shared with the user.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Calendar'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+    post:
+      tags: [Calendars]
+      operationId: createCalendar
+      security:
+        - bearerAuth: []
+      summary: Create calendar
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CalendarCreateRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  calendar:
+                    $ref: '#/components/schemas/Calendar'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error422'
+
+  /calendars/{calendarId}:
+    parameters:
+      - in: path
+        name: calendarId
+        required: true
+        schema:
+          type: integer
+    get:
+      tags: [Calendars]
+      operationId: getCalendar
+      security:
+        - bearerAuth: []
+      summary: Get calendar details
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  calendar:
+                    $ref: '#/components/schemas/Calendar'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+    patch:
+      tags: [Calendars]
+      operationId: updateCalendar
+      security:
+        - bearerAuth: []
+      summary: Update calendar
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CalendarUpdateRequest'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  calendar:
+                    $ref: '#/components/schemas/Calendar'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden (insufficient role)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error422'
+    delete:
+      tags: [Calendars]
+      operationId: deleteCalendar
+      security:
+        - bearerAuth: []
+      summary: Delete calendar
+      description: Only the owner can delete a calendar.
+      responses:
+        '204':
+          description: No Content
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden (not owner)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+
+  /calendars/{calendarId}/events:
+    parameters:
+      - in: path
+        name: calendarId
+        required: true
+        schema:
+          type: integer
+    get:
+      tags: [Events]
+      operationId: listEvents
+      security:
+        - bearerAuth: []
+      summary: List events in time range
+      parameters:
+        - in: query
+          name: from
+          required: true
+          schema:
+            type: string
+            format: date-time
+          description: Inclusive range start (ISO 8601)
+        - in: query
+          name: to
+          required: true
+          schema:
+            type: string
+            format: date-time
+          description: Exclusive range end (ISO 8601)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Event'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden (no access to calendar)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Not Found (calendar not found)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+    post:
+      tags: [Events]
+      operationId: createEvent
+      security:
+        - bearerAuth: []
+      summary: Create event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventCreate'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  event:
+                    $ref: '#/components/schemas/Event'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden (viewer cannot create)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Not Found (calendar not found)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error422'
+
+  /events/{eventId}:
+    parameters:
+      - in: path
+        name: eventId
+        required: true
+        schema:
+          type: integer
+    get:
+      tags: [Events]
+      operationId: getEvent
+      security:
+        - bearerAuth: []
+      summary: Get event details
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  event:
+                    $ref: '#/components/schemas/Event'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden (no access to calendar)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+    patch:
+      tags: [Events]
+      operationId: updateEvent
+      security:
+        - bearerAuth: []
+      summary: Update event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventUpdate'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  event:
+                    $ref: '#/components/schemas/Event'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden (viewer cannot edit)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error422'
+    delete:
+      tags: [Events]
+      operationId: deleteEvent
+      security:
+        - bearerAuth: []
+      summary: Delete event
+      responses:
+        '204':
+          description: No Content
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error401'
+        '403':
+          description: Forbidden (viewer cannot delete)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error403'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    # --- Requests ---
+    RegisterRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          description: User's email address
+        password:
+          type: string
+          format: password
+          minLength: 8
+          maxLength: 255
+        password_confirmation:
+          type: string
+          format: password
+      required: [email, password, password_confirmation]
+
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+      required: [email, password]
+
+    UpdatePasswordRequest:
+      type: object
+      properties:
+        current_password:
+          type: string
+          format: password
+        password:
+          type: string
+          format: password
+          minLength: 8
+          maxLength: 255
+        password_confirmation:
+          type: string
+          format: password
+      required: [current_password, password, password_confirmation]
+
+    CalendarCreateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 120
+        color:
+          type: string
+          nullable: true
+      required: [name]
+
+    CalendarUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 120
+        color:
+          type: string
+          nullable: true
+
+    EventCreate:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+          nullable: true
+        location:
+          type: string
+          nullable: true
+        starts_at:
+          type: string
+          format: date-time
+        ends_at:
+          type: string
+          format: date-time
+        all_day:
+          type: boolean
+          default: false
+        timezone:
+          type: string
+          default: Europe/Warsaw
+        recurrence_rule:
+          type: string
+          nullable: true
+          description: RFC5545 RRULE
+      required: [title, starts_at, ends_at]
+
+    EventUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+          nullable: true
+        location:
+          type: string
+          nullable: true
+        starts_at:
+          type: string
+          format: date-time
+        ends_at:
+          type: string
+          format: date-time
+        all_day:
+          type: boolean
+        timezone:
+          type: string
+        recurrence_rule:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [confirmed, cancelled]
+
+    # --- Responses / Entities ---
+    AuthResponse:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        token:
+          type: string
+          description: Authentication token for subsequent requests
+          example: 1|Xisr9laFEoIDeMY8Pc7TcdpoJNsoJg3h0nkRHRet14e31ce9
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        email:
+          type: string
+          format: email
+          nullable: true
+          example: example@example.com
+        created_at:
+          type: string
+          format: date-time
+          example: '2025-03-10T11:43:23.000000Z'
+        updated_at:
+          type: string
+          format: date-time
+          example: '2025-03-10T11:43:23.000000Z'
+
+    Calendar:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        color:
+          type: string
+          nullable: true
+        role:
+          type: string
+          description: Current user's role for this calendar
+          enum: [owner, editor, viewer]
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    Event:
+      type: object
+      properties:
+        id:
+          type: integer
+        calendar_id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        location:
+          type: string
+          nullable: true
+        starts_at:
+          type: string
+          format: date-time
+        ends_at:
+          type: string
+          format: date-time
+        all_day:
+          type: boolean
+        timezone:
+          type: string
+          example: Europe/Warsaw
+        recurrence_rule:
+          type: string
+          nullable: true
+          description: RFC5545 RRULE
+        status:
+          type: string
+          enum: [confirmed, cancelled]
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    # --- Errors ---
+    Error401:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Unauthenticated.
+
+    Error403:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Forbidden.
+
+    Error404:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Not Found.
+
+    Error422:
+      type: object
+      properties:
+        message:
+          type: string
+          example: The given data was invalid.
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+
+  x-account-security:
+    description: |
+      The system implements the following account security features:
+      - Failed login attempts are tracked
+      - After 5 failed login attempts, the account will be temporarily blocked for 4 hours
+      - Failed login counter is reset after a successful login
+      - When an account is blocked, login attempts and any protected routes will be rejected until the block expires
+
+  x-validation-rules:
+    email:
+      description: |
+        - Required
+        - Must be unique in the system
+        - Must be a valid email format
+    password:
+      description: |
+        - Required
+        - Minimum length: 8 characters
+        - Maximum length: 255 characters
+        - Must contain at least one lowercase letter
+        - Must contain at least one uppercase letter
+        - Must contain at least one number
+        - Must contain at least one special character (@, $, !, %, *, ?, &)
+        - Must be confirmed with password_confirmation field
