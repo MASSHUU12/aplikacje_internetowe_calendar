@@ -45,10 +45,10 @@ composer install
 php artisan key:generate
 ```
 
-7. **Run database migrations and seed it:**
+7. **Run database migrations:**
 
 ```bash
-php artisan migrate:fresh --seed
+php artisan migrate:fresh
 ```
 
 8. **Run the development server (API):**
@@ -59,7 +59,7 @@ php artisan serve --host=0.0.0.0 --port=8000
 
 API will be available at `http://localhost:8000`.
 
-9. **Run the React development server (frontend):**
+9. **Run the React development server (frontend) in a separate terminal:**
 
 ```bash
 bun install
