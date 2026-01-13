@@ -1,4 +1,4 @@
-# Air pollution monitoring system
+# Awesome Calendar
 
 ## Prerequisites
 
