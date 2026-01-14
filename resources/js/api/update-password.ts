@@ -1,3 +1,5 @@
+import { instance } from './api';
+
 export interface UpdatePasswordRequest {
     current_password: string;
     password: string;
@@ -6,4 +8,12 @@ export interface UpdatePasswordRequest {
 
 export interface UpdatePasswordResponse {
     message: string;
+}
+
+export async function updatePassword(
+    json: UpdatePasswordRequest,
+): Promise<UpdatePasswordResponse> {
+    return instance
+        .patch('user/password', { json })
+        .json<UpdatePasswordResponse>();
 }

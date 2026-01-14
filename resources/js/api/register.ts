@@ -1,4 +1,5 @@
 import { User } from '@/types/user';
+import { instance } from './api';
 
 export interface RegisterRequest {
     email: string;
@@ -9,4 +10,10 @@ export interface RegisterRequest {
 export interface RegisterResponse {
     user: User;
     token: string;
+}
+
+export async function register(
+    json: RegisterRequest,
+): Promise<RegisterResponse> {
+    return instance.post('register', { json }).json<RegisterResponse>();
 }
