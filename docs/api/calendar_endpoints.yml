@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
-  title: Calendar API (Auth + Calendars + Events)
-  description: API for authentication and a minimal Google-like calendar (calendars + events).
+  title: Calendar API (Calendars + Events)
+  description: API for a minimal Google-like calendar (calendars + events).
   version: 1.0.0
 
 servers:
@@ -9,158 +9,12 @@ servers:
     description: Local API server
 
 tags:
-  - name: Authentication
-    description: Registration, login, logout, password change
   - name: Calendars
     description: User calendars (owned/shared)
   - name: Events
     description: Calendar events CRUD
 
 paths:
-  /register:
-    post:
-      operationId: register
-      summary: User Registration
-      description: Register a new user account with email
-      tags: [Authentication]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/RegisterRequest'
-      responses:
-        '201':
-          description: Created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthResponse'
-        '422':
-          description: Validation error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error422'
-        '500':
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: There was an error during user registration. Please try again.
-
-  /login:
-    post:
-      operationId: login
-      summary: User Login
-      description: Authenticate user with email and password
-      tags: [Authentication]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/LoginRequest'
-      responses:
-        '201':
-          description: Created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthResponse'
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error401'
-              examples:
-                incorrectCredentials:
-                  summary: Incorrect Credentials
-                  value:
-                    message: The provided credentials are incorrect.
-                blockedAccount:
-                  summary: Account Blocked
-                  value:
-                    message: Your account is temporarily blocked. Please try again later.
-        '422':
-          description: Validation error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error422'
-
-  /logout:
-    post:
-      operationId: logout
-      summary: User Logout
-      description: Revoke all tokens for the authenticated user
-      tags: [Authentication]
-      security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Tokens Revoked
-        '401':
-          description: Unauthenticated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error401'
-
-  /user/password:
-    patch:
-      operationId: updatePassword
-      summary: Change Password
-      description: >
-        Update the authenticated user’s password. This operation should revoke existing tokens
-        (implementation detail). The request must include the current password, new password,
-        and new password confirmation.
-      tags: [Authentication]
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdatePasswordRequest'
-      responses:
-        '200':
-          description: Password Updated
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Password updated successfully.
-        '401':
-          description: Unauthenticated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error401'
-        '422':
-          description: Validation error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error422'
-
   /calendars:
     get:
       tags: [Calendars]
@@ -561,50 +415,6 @@ components:
 
   schemas:
     # --- Requests ---
-    RegisterRequest:
-      type: object
-      properties:
-        email:
-          type: string
-          format: email
-          description: User's email address
-        password:
-          type: string
-          format: password
-          minLength: 8
-          maxLength: 255
-        password_confirmation:
-          type: string
-          format: password
-      required: [email, password, password_confirmation]
-
-    LoginRequest:
-      type: object
-      properties:
-        email:
-          type: string
-          format: email
-        password:
-          type: string
-          format: password
-      required: [email, password]
-
-    UpdatePasswordRequest:
-      type: object
-      properties:
-        current_password:
-          type: string
-          format: password
-        password:
-          type: string
-          format: password
-          minLength: 8
-          maxLength: 255
-        password_confirmation:
-          type: string
-          format: password
-      required: [current_password, password, password_confirmation]
-
     CalendarCreateRequest:
       type: object
       properties:
@@ -686,36 +496,6 @@ components:
           enum: [confirmed, cancelled]
 
     # --- Responses / Entities ---
-    AuthResponse:
-      type: object
-      properties:
-        user:
-          $ref: '#/components/schemas/User'
-        token:
-          type: string
-          description: Authentication token for subsequent requests
-          example: 1|Xisr9laFEoIDeMY8Pc7TcdpoJNsoJg3h0nkRHRet14e31ce9
-
-    User:
-      type: object
-      properties:
-        id:
-          type: integer
-          example: 1
-        email:
-          type: string
-          format: email
-          nullable: true
-          example: example@example.com
-        created_at:
-          type: string
-          format: date-time
-          example: '2025-03-10T11:43:23.000000Z'
-        updated_at:
-          type: string
-          format: date-time
-          example: '2025-03-10T11:43:23.000000Z'
-
     Calendar:
       type: object
       properties:
@@ -811,28 +591,3 @@ components:
             type: array
             items:
               type: string
-
-  x-account-security:
-    description: |
-      The system implements the following account security features:
-      - Failed login attempts are tracked
-      - After 5 failed login attempts, the account will be temporarily blocked for 4 hours
-      - Failed login counter is reset after a successful login
-      - When an account is blocked, login attempts and any protected routes will be rejected until the block expires
-
-  x-validation-rules:
-    email:
-      description: |
-        - Required
-        - Must be unique in the system
-        - Must be a valid email format
-    password:
-      description: |
-        - Required
-        - Minimum length: 8 characters
-        - Maximum length: 255 characters
-        - Must contain at least one lowercase letter
-        - Must contain at least one uppercase letter
-        - Must contain at least one number
-        - Must contain at least one special character (@, $, !, %, *, ?, &)
-        - Must be confirmed with password_confirmation field
