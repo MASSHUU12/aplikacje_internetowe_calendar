@@ -17,7 +17,7 @@ export default function Logout() {
                 setError('Nie udało się poprawnie wylogować z serwera.');
             } finally {
                 clearToken();
-                router.visit('/login', { replace: true });
+                router.visit('/', { replace: true });
             }
         };
 

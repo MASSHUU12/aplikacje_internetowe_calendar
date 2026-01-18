@@ -1,29 +1,65 @@
 import { router } from '@inertiajs/react';
+import { useMemo } from 'react';
+import { getToken } from '@/api/api';
 
 export default function Home() {
+    const isLoggedIn = useMemo(() => Boolean(getToken()), []);
+
     return (
         <div style={styles.page}>
             <div style={styles.card}>
                 <h1 style={styles.title}>Home</h1>
-                <p style={styles.subtitle}>
-                    Witaj! Przejdź do logowania lub od razu do dashboardu.
-                </p>
 
-                <div style={styles.row}>
-                    <button style={styles.button} onClick={() => router.visit('/login')}>
-                        Zaloguj
-                    </button>
-                    <button style={styles.button} onClick={() => router.visit('/register')}>
-                        Zarejestruj
-                    </button>
-                </div>
+                {!isLoggedIn ? (
+                    <>
+                        <p style={styles.subtitle}>
+                            Witaj! Przejdź do logowania lub od razu do dashboardu.
+                        </p>
 
-                <button
-                    style={{ ...styles.button, width: '100%', marginTop: 10 }}
-                    onClick={() => router.visit('/dashboard')}
-                >
-                    Przejdź do Dashboard
-                </button>
+                        <div style={styles.row}>
+                            <button
+                                style={styles.button}
+                                onClick={() => router.visit('/login')}
+                            >
+                                Zaloguj
+                            </button>
+                            <button
+                                style={styles.button}
+                                onClick={() => router.visit('/register')}
+                            >
+                                Zarejestruj
+                            </button>
+                        </div>
+
+                        <button
+                            style={{ ...styles.button, width: '100%', marginTop: 10 }}
+                            onClick={() => router.visit('/dashboard')}
+                        >
+                            Przejdź do Dashboard
+                        </button>
+                    </>
+                ) : (
+                    <>
+                        <p style={styles.subtitle}>
+                            ✅ Jesteś już zalogowany.
+                        </p>
+
+                        <div style={styles.row}>
+                            <button
+                                style={styles.button}
+                                onClick={() => router.visit('/dashboard')}
+                            >
+                                Przejdź do Dashboard
+                            </button>
+                            <button
+                                style={styles.button}
+                                onClick={() => router.visit('/logout')}
+                            >
+                                Wyloguj
+                            </button>
+                        </div>
+                    </>
+                )}
             </div>
         </div>
     );
@@ -52,8 +88,17 @@ const styles = {
         backdropFilter: 'blur(10px)',
     },
     title: { margin: 0, fontSize: 26, fontWeight: 850 },
-    subtitle: { margin: '8px 0 14px', fontSize: 14, color: 'rgba(234,240,255,.75)' },
-    row: { display: 'flex', gap: 10, flexWrap: 'wrap' as const },
+    subtitle: {
+        margin: '8px 0 14px',
+        fontSize: 14,
+        color: 'rgba(234,240,255,.75)',
+    },
+    row: {
+        display: 'flex',
+        gap: 10,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
     button: {
         borderRadius: 14,
         padding: '12px 14px',

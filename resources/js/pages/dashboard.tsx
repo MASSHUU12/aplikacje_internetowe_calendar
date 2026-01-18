@@ -1,10 +1,11 @@
 import { router } from '@inertiajs/react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Calendar, dateFnsLocalizer, type Event as RBCEvent, Views } from 'react-big-calendar';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 
 import { format, parse, startOfWeek, getDay } from 'date-fns';
 import { pl } from 'date-fns/locale';
+import { getToken } from '@/api/api';
 
 type CalendarEvent = RBCEvent & {
     title: string;
@@ -44,6 +45,12 @@ export default function Dashboard() {
         ],
         [],
     );
+
+    useEffect(() => {
+        if (!getToken()) {
+            router.visit('/login', { replace: true });
+        }
+    }, []);
 
     const onSelectSlot = ({ start, end }: { start: Date; end: Date }) => {
         const title = window.prompt('Nazwa wydarzenia:');

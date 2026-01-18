@@ -56,11 +56,6 @@ export default function Register() {
         e.preventDefault();
         setError(null);
 
-        if (!passwordsMatch) {
-            setError('Hasła muszą być takie same.');
-            return;
-        }
-
         if (!passwordMeetsRules) {
             setError(
                 'Hasło musi mieć min. 8 znaków oraz zawierać: małą i dużą literę, cyfrę i znak specjalny (@$!%*?&).',
