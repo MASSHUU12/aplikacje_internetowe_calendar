@@ -23,8 +23,6 @@ export default function Register() {
         password.length > 0 && password === passwordConfirmation;
 
     const passwordMeetsRules = useMemo(() => {
-        // Backend rules:
-        // min:8, must include lowercase, uppercase, number, special @$!%*?&
         return (
             password.length >= 8 &&
             /[a-z]/.test(password) &&
@@ -247,10 +245,6 @@ export default function Register() {
         </div>
     );
 }
-
-/* =========================
-   STYLES (bez any)
-   ========================= */
 
 type RegisterStyles = {
     page: CSSProperties;
@@ -479,7 +473,6 @@ const styles: RegisterStyles = {
     },
 };
 
-/* spinner keyframes */
 const styleElId = '__register_spinner_style__';
 if (typeof document !== 'undefined' && !document.getElementById(styleElId)) {
     const style = document.createElement('style');

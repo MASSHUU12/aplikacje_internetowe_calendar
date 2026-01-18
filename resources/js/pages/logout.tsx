@@ -13,7 +13,6 @@ export default function Logout() {
                 await logout();
             } catch (err) {
                 console.error(err);
-                // nawet jeśli backend padnie — czyścimy frontend
                 setError('Nie udało się poprawnie wylogować z serwera.');
             } finally {
                 clearToken();
@@ -36,10 +35,6 @@ export default function Logout() {
         </div>
     );
 }
-
-/* =========================
-   STYLES (bez any)
-   ========================= */
 
 type LogoutStyles = {
     page: CSSProperties;
@@ -99,10 +94,6 @@ const styles: LogoutStyles = {
         animation: 'spin 0.8s linear infinite',
     },
 };
-
-/* =========================
-   Spinner animation
-   ========================= */
 
 const styleElId = '__logout_spinner__';
 if (typeof document !== 'undefined' && !document.getElementById(styleElId)) {

@@ -340,8 +340,6 @@ const styles: LoginStyles = {
     },
 };
 
-// Mały globalny styl animacji spinnera.
-// Jeśli masz globalne CSS, przenieś to do pliku css.
 const styleElId = '__login_spinner_style__';
 if (typeof document !== 'undefined' && !document.getElementById(styleElId)) {
     const style = document.createElement('style');

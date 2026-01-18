@@ -27,7 +27,7 @@ const locales = { pl };
 const localizer = dateFnsLocalizer({
     format,
     parse,
-    startOfWeek: (date: Date) => startOfWeek(date, { weekStartsOn: 1 }), // poniedziałek
+    startOfWeek: (date: Date) => startOfWeek(date, { weekStartsOn: 1 }),
     getDay,
     locales,
 });
@@ -103,7 +103,6 @@ export default function Dashboard() {
 
     useEffect(() => {
         if (isModalOpen) {
-            // focus first input on open
             setTimeout(() => titleRef.current?.focus(), 0);
         }
     }, [isModalOpen]);
