@@ -15,17 +15,20 @@ class EventController extends Controller
             abort(403);
         }
 
-        $data = $request->validate([
-            'from' => ['required', 'date'],
-            'to' => ['required', 'date', 'after:from'],
-        ]);
+        $query = Event::query()
+            ->where('calendar_id', $calendar->id);
 
-        $items = Event::query()
-            ->where('calendar_id', $calendar->id)
-            ->where('starts_at', '<', $data['to'])
-            ->where('ends_at', '>', $data['from'])
-            ->orderBy('starts_at')
-            ->get();
+        if ($request->has(['from', 'to'])) {
+            $data = $request->validate([
+                'from' => ['date'],
+                'to' => ['date', 'after:from'],
+            ]);
+
+            $query->where('starts_at', '<', $data['to'])
+                  ->where('ends_at', '>', $data['from']);
+        }
+
+        $items = $query->orderBy('starts_at')->get();
 
         return response()->json([
             'items' => $items,

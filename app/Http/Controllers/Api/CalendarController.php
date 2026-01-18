@@ -12,12 +12,21 @@ class CalendarController extends Controller
     {
         $user = $request->user();
 
+        if (Calendar::where('owner_user_id', $user->id)->doesntExist()) {
+            Calendar::create([
+                'owner_user_id' => $user->id,
+                'name' => 'Mój kalendarz',
+                'color' => '#3b82f6',
+            ]);
+        }
+
         $items = Calendar::query()
             ->where('owner_user_id', $user->id)
-            ->orderBy('created_at', 'desc')
+            ->orderBy('created_at', 'asc')
             ->get()
-            ->map(function ($c) {
+            ->map(function ($c, $key) {
                 $c->role = 'owner';
+                $c->is_default = ($key === 0);
                 return $c;
             });
 
@@ -40,6 +49,7 @@ class CalendarController extends Controller
         ]);
 
         $calendar->role = 'owner';
+        $calendar->is_default = false;
 
         return response()->json([
             'calendar' => $calendar,
@@ -71,7 +81,6 @@ class CalendarController extends Controller
         ]);
 
         $calendar->update($data);
-
         $calendar->role = 'owner';
 
         return response()->json([

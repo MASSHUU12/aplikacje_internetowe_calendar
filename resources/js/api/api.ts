@@ -4,15 +4,17 @@ export interface Payload {
     token?: string;
 }
 
-let authToken: string | undefined;
-
 export const setToken = (newToken: string) => {
-    authToken = newToken;
+    localStorage.setItem("token", newToken);
 };
 
 export const clearToken = () => {
-    authToken = undefined;
+    localStorage.removeItem("token")
 };
+
+export const getToken = () => {
+    return localStorage.getItem("token")
+}
 
 export const instance = ky.extend({
     prefixUrl: '/api',
@@ -23,6 +25,8 @@ export const instance = ky.extend({
     hooks: {
         beforeRequest: [
             (request) => {
+                const authToken = getToken()
+
                 if (authToken) {
                     request.headers.set('Authorization', `Bearer ${authToken}`);
                 }
