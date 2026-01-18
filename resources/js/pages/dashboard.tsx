@@ -12,6 +12,8 @@ import { getToken } from '@/api/api';
 import { format, getDay, parse, startOfWeek } from 'date-fns';
 import { pl } from 'date-fns/locale';
 
+import '../../css/calendar-overrides.css';
+
 type CalendarEvent = RBCEvent & {
     id: number;
     title: string;
@@ -52,8 +54,8 @@ export default function Dashboard() {
 
     type Draft = {
         title: string;
-        start: string; // yyyy-MM-ddTHH:mm
-        end: string; // yyyy-MM-ddTHH:mm
+        start: string;
+        end: string;
         allDay: boolean;
     };
 
@@ -188,9 +190,6 @@ export default function Dashboard() {
             <div style={styles.topbar}>
                 <div>
                     <h1 style={styles.title}>Dashboard</h1>
-                    <p style={styles.subtitle}>
-                        Kalendarz (react-big-calendar)
-                    </p>
                 </div>
 
                 <div style={styles.actions}>
@@ -384,6 +383,8 @@ export default function Dashboard() {
 }
 
 const styles = {
+
+
     page: {
         minHeight: '100vh',
         padding: '18px 16px 26px',
@@ -433,12 +434,11 @@ const styles = {
         height: '78vh',
         minHeight: 520,
     },
-    // --- UPDATED SECTIONS BELOW ---
     modalOverlay: {
         position: 'fixed' as const,
         inset: 0,
-        background: 'rgba(0,0,0,.75)', // Increased opacity for better focus
-        backdropFilter: 'blur(4px)', // Blurs the calendar behind the modal
+        background: 'rgba(0,0,0,.75)',
+        backdropFilter: 'blur(4px)',
         display: 'grid',
         placeItems: 'center',
         padding: 16,
@@ -449,14 +449,12 @@ const styles = {
         maxWidth: 520,
         borderRadius: 16,
         border: '1px solid rgba(255,255,255,.15)',
-        // CHANGED: Opaque dark background instead of transparent white
         background: '#1a202c',
         backgroundImage: 'linear-gradient(180deg, #1f2937, #111827)',
         color: '#eaf0ff',
         boxShadow: '0 25px 70px rgba(0,0,0,.85)',
-        padding: 24, // Increased padding slightly for breathing room
+        padding: 24,
     },
-    // -----------------------------
     modalHeader: {
         display: 'flex',
         alignItems: 'center',
@@ -491,7 +489,7 @@ const styles = {
         borderRadius: 10,
         padding: '12px 14px',
         border: '1px solid rgba(255,255,255,.14)',
-        background: 'rgba(0,0,0,.4)', // Darker input background for contrast
+        background: 'rgba(0,0,0,.4)',
         color: '#fff',
         outline: 'none',
         fontSize: 14,
@@ -504,5 +502,6 @@ const styles = {
         paddingTop: 16,
         borderTop: '1px solid rgba(255,255,255,0.05)',
     },
+
 };
 
