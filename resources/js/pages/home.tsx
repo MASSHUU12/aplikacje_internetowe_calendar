@@ -13,7 +13,7 @@ export default function Home() {
                 {!isLoggedIn ? (
                     <>
                         <p style={styles.subtitle}>
-                            Witaj! Przejdź do logowania lub od razu do dashboardu.
+                            Zaloguj się lub zarejestruj, jeżeli nie masz jeszcze konta.
                         </p>
 
                         <div style={styles.row}>
@@ -31,12 +31,15 @@ export default function Home() {
                             </button>
                         </div>
 
-                        <button
-                            style={{ ...styles.button, width: '100%', marginTop: 10 }}
-                            onClick={() => router.visit('/dashboard')}
-                        >
-                            Przejdź do Dashboard
-                        </button>
+                        {isLoggedIn && (
+                            <button
+                                style={{ ...styles.button, width: '100%', marginTop: 10 }}
+                                onClick={() => router.visit('/dashboard')}
+                            >
+                                Przejdź do Dashboard
+                            </button>
+                        )}
+
                     </>
                 ) : (
                     <>
@@ -86,8 +89,9 @@ const styles = {
         boxShadow: '0 25px 70px rgba(0,0,0,.55)',
         padding: 18,
         backdropFilter: 'blur(10px)',
+        textAlign: 'center' as const,
     },
-    title: { margin: 0, fontSize: 26, fontWeight: 850 },
+    title: { margin: 0, fontSize: 26, fontWeight: 850},
     subtitle: {
         margin: '8px 0 14px',
         fontSize: 14,
