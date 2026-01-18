@@ -9,6 +9,8 @@ import {
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 
 import { getToken } from '@/api/api';
+import { createEvent as apiCreateEvent, updateEvent as apiUpdateEvent, deleteEvent as apiDeleteEvent, listEvents } from '@/api/events';
+import { listCalendars } from '@/api/calendars';
 import { format, getDay, parse, startOfWeek } from 'date-fns';
 import { pl } from 'date-fns/locale';
 
@@ -39,13 +41,62 @@ export default function Dashboard() {
     const [date, setDate] = useState<Date>(new Date());
 
     const [events, setEvents] = useState<CalendarEvent[]>(() => []);
-    const [nextId, setNextId] = useState<number>(3);
+    const [selectedCalendarId, setSelectedCalendarId] = useState<number | null>(null);
+    const [isSaving, setIsSaving] = useState<boolean>(false);
+    const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
     useEffect(() => {
         if (!getToken()) {
             router.visit('/login', { replace: true });
         }
     }, []);
+
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            try {
+                const items = await listCalendars();
+                if (!cancelled) {
+                    if (items.length > 0) {
+                        setSelectedCalendarId((prev) => prev ?? items[0].id);
+                    }
+                }
+            } catch (e) {
+                console.error('Failed to load calendars', e);
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            if (selectedCalendarId == null) {
+                setEvents([]);
+                return;
+            }
+            try {
+                const items = await listEvents(selectedCalendarId);
+                if (!cancelled) {
+                    const mapped: CalendarEvent[] = items.map((it) => ({
+                        id: it.id,
+                        title: it.title,
+                        start: new Date(it.starts_at),
+                        end: new Date(it.ends_at),
+                        allDay: it.all_day,
+                    }));
+                    setEvents(mapped);
+                }
+            } catch (e) {
+                console.error('Failed to load events', e);
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, [selectedCalendarId]);
 
     const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
     const [mode, setMode] = useState<'create' | 'edit'>('create');
@@ -127,7 +178,7 @@ export default function Dashboard() {
         openEditModal(event);
     };
 
-    const saveDraft = () => {
+    const saveDraft = async () => {
         const start = localInputToDate(draft.start);
         const end = localInputToDate(draft.end);
 
@@ -145,41 +196,78 @@ export default function Dashboard() {
             );
             return;
         }
+        try {
+            setIsSaving(true);
+            if (mode === 'create') {
+                if (selectedCalendarId == null) {
+                    alert('Brak wybranego kalendarza. Nie można zapisać wydarzenia.');
+                    return;
+                }
 
-        if (mode === 'create') {
-            const newEvent: CalendarEvent = {
-                id: nextId,
-                title: draft.title.trim(),
-                start,
-                end,
-                allDay: draft.allDay,
-            };
-            setEvents((prev) => [...prev, newEvent]);
-            setNextId((n) => n + 1);
-        } else if (mode === 'edit' && editingId != null) {
-            setEvents((prev) =>
-                prev.map((ev) =>
-                    ev.id === editingId
-                        ? {
-                            ...ev,
-                            title: draft.title.trim(),
-                            start,
-                            end,
-                            allDay: draft.allDay,
-                        }
-                        : ev,
-                ),
-            );
+                const created = await apiCreateEvent(selectedCalendarId, {
+                    title: draft.title.trim(),
+                    starts_at: start.toISOString(),
+                    ends_at: end.toISOString(),
+                    all_day: draft.allDay,
+                    timezone: 'Europe/Warsaw',
+                });
+
+                const mapped: CalendarEvent = {
+                    id: created.id,
+                    title: created.title,
+                    start: new Date(created.starts_at),
+                    end: new Date(created.ends_at),
+                    allDay: created.all_day,
+                };
+                setEvents((prev) => [...prev, mapped]);
+            } else if (mode === 'edit' && editingId != null) {
+                const updated = await apiUpdateEvent(editingId, {
+                    title: draft.title.trim(),
+                    starts_at: start.toISOString(),
+                    ends_at: end.toISOString(),
+                    all_day: draft.allDay,
+                });
+
+                setEvents((prev) =>
+                    prev.map((ev) =>
+                        ev.id === updated.id
+                            ? {
+                                id: updated.id,
+                                title: updated.title,
+                                start: new Date(updated.starts_at),
+                                end: new Date(updated.ends_at),
+                                allDay: updated.all_day,
+                            }
+                            : ev,
+                    ),
+                );
+            }
+
+            setIsModalOpen(false);
+        } catch (e: unknown) {
+
+            console.error(e);
+            alert('Nie udało się zapisać wydarzenia. Spróbuj ponownie.');
+        } finally {
+            setIsSaving(false);
         }
-
-        setIsModalOpen(false);
     };
 
-    const deleteEvent = () => {
+    const deleteEvent = async () => {
         if (mode === 'edit' && editingId != null) {
-            if (confirm('Czy na pewno usunąć to wydarzenie?')) {
+            const sure = confirm('Czy na pewno usunąć to wydarzenie?');
+            if (!sure) return;
+            try {
+                setIsDeleting(true);
+                await apiDeleteEvent(editingId);
                 setEvents((prev) => prev.filter((ev) => ev.id !== editingId));
                 setIsModalOpen(false);
+            } catch (e) {
+
+                console.error(e);
+                alert('Nie udało się usunąć wydarzenia. Spróbuj ponownie.');
+            } finally {
+                setIsDeleting(false);
             }
         }
     };
@@ -349,8 +437,9 @@ export default function Dashboard() {
                                         background: 'rgba(239,68,68,.12)',
                                         borderColor: 'rgba(239,68,68,.35)',
                                     }}
+                                    disabled={isDeleting}
                                 >
-                                    Usuń
+                                    {isDeleting ? 'Usuwanie...' : 'Usuń'}
                                 </button>
                             )}
                             <div style={{ flex: 1 }} />
@@ -370,8 +459,9 @@ export default function Dashboard() {
                                     background: 'rgba(16,185,129,.18)',
                                     borderColor: 'rgba(16,185,129,.45)',
                                 }}
+                                disabled={isSaving}
                             >
-                                Zapisz
+                                {isSaving ? 'Zapisywanie...' : 'Zapisz'}
                             </button>
                         </div>
                     </div>
@@ -382,8 +472,6 @@ export default function Dashboard() {
 }
 
 const styles = {
-
-
     page: {
         minHeight: '100vh',
         padding: '18px 16px 26px',
