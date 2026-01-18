@@ -49,3 +49,39 @@
 .rbc-time-view .rbc-today .rbc-time-slot:hover {
     background: rgba(59, 130, 246, 0.18);
 }
+
+.rbc-toolbar button {
+    color: #ffffff !important;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 10px;
+    font-weight: 700;
+    padding: 8px 14px;
+    transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.rbc-toolbar button:hover {
+    background: rgba(255, 255, 255, 0.22);
+}
+
+.rbc-toolbar button.rbc-active {
+    background: #ffffff !important;
+    color: #0b1020 !important;
+    box-shadow: 0 6px 20px rgba(255, 255, 255, 0.35);
+}
+
+.rbc-toolbar button:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.6);
+}
+
+.rbc-toolbar button:disabled {
+    opacity: 0.45;
+}
+
+.rbc-toolbar-label {
+    font-size: 26px;
+    font-weight: 800;
+    color: #ffffff;
+    letter-spacing: 0.3px;
+}
